@@ -1,0 +1,29 @@
+# --- Secrets: NEVER commit ---
+.env
+.env.*
+# Playwright recordings contain the typed password
+recorded.txt
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# --- Run output and school data ---
+logs/
+data/
+guides/
+*.png
+*.log
+*.xlsx
+*.csv
+
+# --- Personal / backup folders ---
+Claude outputs/
+Before New Feature/
+
+# --- Editor / OS ---
+.vscode/
+Thumbs.db
+Desktop.ini

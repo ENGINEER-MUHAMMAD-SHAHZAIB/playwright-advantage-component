@@ -1,0 +1,163 @@
+=====================================================
+ NEW "ADD COMPONENTS" REQUEST - WHAT TO DO
+ (new guide, new program, or new school)
+=====================================================
+
+Example: today it is  Cosmetology  at Royal Treatment Beauty Academy.
+Tomorrow you get a new guide, for example  Barbering  or  Esthetics.
+Follow these steps. You do NOT need Claude for a guide in the same format.
+
+Files used:
+   convert_guide.py    -> turns the guide into an automation Excel
+   add_components.py   -> adds the rows in Advantage
+   guides\             -> put the guides you receive here
+   data\               -> the automation Excel files are saved here
+
+
+-----------------------------------------------------
+STEP 1 - Open the project
+-----------------------------------------------------
+cd C:\Automation\advantage-sis-bot
+.venv\Scripts\activate
+
+
+-----------------------------------------------------
+STEP 2 - Save the new guide in the guides folder
+-----------------------------------------------------
+mkdir guides                      (only the first time)
+
+   Copy the guide (.csv or .xlsx) into  C:\Automation\advantage-sis-bot\guides
+   Tip: a short file name is easier, e.g.  guides\Barbering - Work Units.csv
+
+
+-----------------------------------------------------
+STEP 3 - Tell the converter about the new guide
+-----------------------------------------------------
+code convert_guide.py
+
+   Change the SETTINGS at the top (lines 22 - 35):
+
+   Line 22  GUIDE_FILE  = "guides/Barbering - Work Units.csv"
+   Line 23  GUIDE_SHEET = None                (xlsx only: sheet name, or None = first sheet)
+   Line 24  PROGRAM     = "Barbering"         (as in the course name "Subject - Barbering")
+   Line 25  CAMPUS      = "Royal Treatment Beauty Academy"
+   Line 27  OUTPUT_FILE = "data/automation_ready_barbering.xlsx"   (a NEW name each time)
+   Line 30  TYPE_MAP    = { "Written Exam": "Exam", ... }
+                          guide Workunit Type  ->  Advantage "System component type"
+                          add new types here when you know them
+
+   Ctrl + S
+
+
+-----------------------------------------------------
+STEP 4 - Convert
+-----------------------------------------------------
+python convert_guide.py
+
+   You see something like:
+   Saved data/automation_ready_barbering.xlsx
+     Subjects: 3   Components: 120   Run = Yes: 110   Run = No: 10
+     Rows to review: 10  (see the 'Needs Review' tab)
+
+
+-----------------------------------------------------
+STEP 5 - Check the new Excel
+-----------------------------------------------------
+start data\automation_ready_barbering.xlsx
+
+   - Tab "Components": one row = one component. Run = Yes rows will be added.
+   - Tab "Needs Review": rows skipped and why (unknown type, Y/N empty, title rows).
+   - Fix by editing the yellow columns, OR add the type to TYPE_MAP, delete the
+     output file and run  python convert_guide.py  again.
+   - Save and CLOSE Excel.
+
+
+-----------------------------------------------------
+STEP 6 - Find the program in Advantage (only for a NEW program)
+-----------------------------------------------------
+   The script opens the program by its position in the search list
+   (e.g. #programAndProgramVersions-option-3 = Cosmetology, 2nd version).
+   For a new program, find its position with a short recording:
+
+playwright codegen https://advantage.fameinc.com/login
+
+   In the browser: log in -> tenant -> Setup -> Academic -> Academics -> Programs
+   -> click "Search and Add Program" -> click the program/version you need -> close the browser.
+
+   In the recorded code, find the line like:
+      page.locator("#programAndProgramVersions-option-7").click()
+   The part in quotes is what you need:  #programAndProgramVersions-option-7
+
+   (Remove your password from the recording if you save it.)
+
+
+-----------------------------------------------------
+STEP 7 - Point the script to the new Excel and program
+-----------------------------------------------------
+code add_components.py
+
+   Line 30  EXCEL_FILE          = "data/automation_ready_barbering.xlsx"
+   Line 42  PROGRAM_SEARCH_TEXT = "Barbering"
+   Line 43  PROGRAM_OPTION      = "#programAndProgramVersions-option-7"
+
+   Ctrl + S
+
+
+-----------------------------------------------------
+STEP 8 - New school? (skip if same school)
+-----------------------------------------------------
+code .env
+
+   SIS_TENANT=newtenant
+   SIS_TENANT_OPTION=NewSchoolNameExactlyAsInTheList
+
+   And in convert_guide.py line 25:  CAMPUS = "New School Campus Name"
+
+
+-----------------------------------------------------
+STEP 9 - Run safely (same as always)
+-----------------------------------------------------
+   Test   : LIMIT = 1    DRY_RUN = True    ALLOW_LIVE = False
+            python add_components.py      -> CHECK the right program + course opened!
+   1 row  : LIMIT = 1    DRY_RUN = False   ALLOW_LIVE = True
+   More   : LIMIT = 3 -> 10 -> 50 -> all
+   Finish : LIMIT = 1    DRY_RUN = True    ALLOW_LIVE = False
+
+   Settings are at the top of add_components.py (lines 30 - 50).
+
+
+-----------------------------------------------------
+GOOD TO KNOW
+-----------------------------------------------------
+- Logs remember done rows per COURSE + COMPONENT, so a new program never
+  skips by mistake because of an old program. Never delete the logs folder.
+- Components already in the course are skipped automatically.
+- CREATE_IF_MISSING = True (line 46) creates components that don't exist yet.
+- Several guides? Do them one at a time: convert -> set EXCEL_FILE -> run.
+- The program position (option-N) can change if programs are added in Advantage.
+  Always check in the test run that the RIGHT program and version open.
+- Line numbers are for the current version of the scripts.
+
+
+-----------------------------------------------------
+WHEN TO ASK CLAUDE
+-----------------------------------------------------
+- The guide looks different (other columns, other layout) and convert_guide.py
+  says "Could not find the header row" or columns are missing.
+- A different TASK (not grade book components), e.g. creating subjects or courses:
+  send 1 recording + 1 sample guide + screenshots.
+- The screens in Advantage look different for another school.
+
+
+-----------------------------------------------------
+QUICK CHECKLIST
+-----------------------------------------------------
+[ ] Guide saved in guides\
+[ ] convert_guide.py: GUIDE_FILE, PROGRAM, CAMPUS, OUTPUT_FILE, TYPE_MAP
+[ ] python convert_guide.py  -> checked "Needs Review"
+[ ] Program position found (new program only)
+[ ] add_components.py: EXCEL_FILE, PROGRAM_SEARCH_TEXT, PROGRAM_OPTION
+[ ] .env tenant (new school only)
+[ ] Test run opened the RIGHT program and course
+[ ] 1 row -> check in Advantage -> more rows
+[ ] Lock settings again when finished

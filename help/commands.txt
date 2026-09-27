@@ -1,0 +1,138 @@
+=====================================================
+ ADVANTAGE AUTOMATION - COMMANDS (run in VS Code terminal)
+=====================================================
+
+1. Open Project (every time first)
+-----------------------------------
+cd C:\Automation\advantage-sis-bot
+.venv\Scripts\activate
+
+   -> line must start with (.venv)
+
+
+2. Check Login File (once)
+-----------------------------------
+code .env
+
+   SIS_URL=https://advantage.fameinc.com/login
+   SIS_USER=your_username
+   SIS_PASS=your_password
+   SIS_TENANT=royal
+   SIS_TENANT_OPTION=RoyalTreatmentBeautyAcademy
+
+
+3. Start Recording (only when you need new steps)
+-----------------------------------
+playwright codegen https://advantage.fameinc.com/login
+
+   -> close the browser when done, copy the code, send to Claude
+   -> remove your password from the code before sharing
+
+
+4. Check Excel (optional)
+-----------------------------------
+start data\automation_ready.xlsx
+
+   -> close Excel before running the script
+
+
+5. Open Script Settings
+-----------------------------------
+code add_components.py
+
+   -> change only the SETTINGS block at the top, then Ctrl + S
+
+
+6. Verify Before Apply (test - saves nothing)
+-----------------------------------
+   Settings:  LIMIT = 1   DRY_RUN = True   ALLOW_LIVE = False
+
+python add_components.py
+
+   -> check the browser, then press Enter
+
+
+7. Apply 1 Row (first real save)
+-----------------------------------
+   Settings:  LIMIT = 1   DRY_RUN = False   ALLOW_LIVE = True
+
+python add_components.py
+
+   -> check the row in Advantage
+
+
+8. Apply More Rows
+-----------------------------------
+   Settings:  LIMIT = 3  ->  10  ->  50  ->  400   (DRY_RUN = False, ALLOW_LIVE = True)
+
+python add_components.py
+
+   -> already added rows are skipped automatically
+
+
+9. Check Logs
+-----------------------------------
+dir logs
+start logs\error_row1.png
+
+   -> change the number to the row in the error message
+
+
+10. Continue After an Error
+-----------------------------------
+   Settings:  START_FROM_ROW_ID = 25   (the row where it stopped)
+
+python add_components.py
+
+
+11. Stop a Running Script
+-----------------------------------
+   Click in the terminal and press  Ctrl + C
+
+
+12. Lock When Finished
+-----------------------------------
+   Settings:  LIMIT = 1   DRY_RUN = True   ALLOW_LIVE = False   START_FROM_ROW_ID = 1
+
+
+13. Speed + Reliability Settings (in add_components.py)
+-----------------------------------
+   Open:  code add_components.py   then Ctrl + G and type the line number
+   Numbers are milliseconds (1000 = 1 second) unless it says seconds. After a change: Ctrl + S
+
+   BATCH SAVE (biggest time saver)
+   Line 45   BATCH_SIZE = 50       rows added before ONE Save. 1 = old way. 10-50 is fine.
+   Line 46   PRECREATE_MISSING = True   create missing components first, then batch (needs line 51 = True)
+
+   AUTO-RESUME / RELIABILITY
+   Line 48   MAX_RETRIES = 3       page stuck -> reload, reopen course, continue (per row)
+   Line 49   GRID_WAIT_MAX_S = 180 max seconds to wait for a big course grid
+   Line 50   GRID_STALL_S = 30     stop waiting if nothing more loads for this long
+   Done-cache file:  data\done_automation_ready.csv
+             every saved row is written here straight after Save.
+             Next run skips these rows with NO searching. Don't delete it.
+             (If a row is in it by mistake, delete that line and save.)
+
+   MAIN SPEED
+   Line 39   SLOW_MO = 20          faster: 0      slower/safer: 150 or 250
+   Line 40   HEADLESS = False      faster: True (browser hidden)
+
+   WAITS AFTER SAVING
+   Line 376  wait_for_timeout(400)  after grid Save -> Confirm      faster: 200  safer: 1000
+   Line 261  wait_for_timeout(400)  after New Component Save       faster: 200  safer: 1000
+   Line 195  wait_for_timeout(300)  how often it checks the grid   faster: 200  safer: 500
+
+   MAX WAIT BEFORE GIVING UP (only when the site is slow)
+   Line 445        set_default_timeout(20000)  any button/field (20 s) - 40000 on "Timeout" errors
+   Line 97, 98     timeout=60000               login page (60 s, 3 tries)
+   Line 83,133,271 timeout=8000                dropdown option appears (8 s)
+   Line 137        timeout=15000               course grid appears (15 s)
+
+   PRESETS
+   Normal : BATCH_SIZE = 20, SLOW_MO = 20
+   Faster : BATCH_SIZE = 50, SLOW_MO = 0, HEADLESS = True, lines 261 and 376 = 200
+   Errors : BATCH_SIZE = 5, SLOW_MO = 150, lines 261 and 376 = 1000, line 445 = 40000
+
+   START_FROM_ROW_ID: leave at 1 - the done-cache resumes by itself.
+   LIMIT: counts only NEW rows (done rows are not counted).
+   Line numbers are for the current version of the script.
